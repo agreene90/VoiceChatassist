@@ -1,31 +1,40 @@
-
-from transformers import pipeline
+import spacy
+from spacy.matcher import Matcher
 import logging
-import os
 
-sentiment_model_path = os.getenv('SENTIMENT_MODEL_PATH', 'models/bert-sentiment-model')
-dialogue_model_path = os.getenv('DIALOGUE_MODEL_PATH', 'models/gpt2-dialogue-model')
+# Initialize the logger
+logging.basicConfig(level=logging.INFO)
 
-try:
-    sentiment_analysis = pipeline('sentiment-analysis', model=sentiment_model_path)
-    dialogue_manager = pipeline('text-generation', model=dialogue_model_path)
-except Exception as e:
-    logging.error(f"Failed to load models: {str(e)}")
-    raise ImportError("Could not load NLP models.")
+# Load Spacy model for English
+nlp = spacy.load('en_core_web_trf')
+matcher = Matcher(nlp.vocab)
 
-def analyze_sentiment(text):
-    try:
-        result = sentiment_analysis(text)[0]
-        return result['label']
-    except Exception as e:
-        logging.error(f"Error analyzing sentiment: {str(e)}")
-        raise ValueError("Sentiment analysis failed.")
+def setup_matcher():
+    # Define patterns to match in the text
+    greeting_patterns = [[{'LOWER': 'hello'}], [{'LOWER': 'goodbye'}]]
+    weather_patterns = [[{'LOWER': 'weather'}, {'LOWER': 'like', 'OP': '?'}]]
+    
+    # Add patterns to the matcher
+    for pattern in greeting_patterns:
+        matcher.add('Greeting', [pattern])
+    for pattern in weather_patterns:
+        matcher.add('Weather Inquiry', [pattern])
 
-def generate_response(text, sentiment):
-    try:
-        adjusted_input = f"{text} {'Positive' if sentiment == 'POSITIVE' else 'Negative'} mood detected."
-        response = dialogue_manager(adjusted_input)[0]['generated_text']
-        return response
-    except Exception as e:
-        logging.error(f"Error generating response: {str(e)}")
-        raise ValueError("Response generation failed.")
+def analyze_text(text):
+    # Process the text with the NLP model
+    doc = nlp(text)
+    matches = matcher(doc)
+    
+    # Check for matches and log them
+    for match_id, start, end in matches:
+        span = doc[start:end]
+        logging.info(f'Found a match: {span.text}')
+        return f'Found a match: {span.text}'
+    return 'No matches found.'
+
+if __name__ == "__main__":
+    setup_matcher()
+    while True:
+        input_text = input("Enter some text: ")
+        result = analyze_text(input_text)
+        print(result)
