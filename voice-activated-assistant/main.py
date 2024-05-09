@@ -1,16 +1,16 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Depends
-import logging
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile
 from pydantic import BaseModel
 from database_interaction import ChatDatabase
 from nlp_processing import analyze_text
 from speech_recognition import listen_and_respond
+from utilities import CustomLogger  # Importing CustomLogger from utilities.py
 
 # Initialize the FastAPI app
 app = FastAPI()
 
-# Setup logging
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Setup custom logging
+logger = CustomLogger('app.log', max_bytes=1000000, backup_count=5)
 
 # Initialize the database
 database = ChatDatabase('chat_memory.db')
@@ -34,12 +34,12 @@ async def process_audio(interaction: Interaction, database: ChatDatabase = Depen
         if user_speech:
             response = await analyze_text(user_speech)
             await database.update_response_frequency(response)
-            database.log_interaction(user_speech, response)
+            logger.log_interaction(user_speech, response)  # Using custom logger
             return {"response": response}
         else:
             raise HTTPException(status_code=400, detail="No speech detected")
     except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
+        logger.log_error(f"An error occurred: {str(e)}")  # Using custom logger
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/response/{response}")
@@ -54,7 +54,7 @@ async def get_response_frequency(response: str, database: ChatDatabase = Depends
         else:
             raise HTTPException(status_code=404, detail="Response not found")
     except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
+        logger.log_error(f"An error occurred: {str(e)}")  # Using custom logger
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/listen/")
@@ -67,12 +67,12 @@ async def listen_and_process(database: ChatDatabase = Depends(get_database)):
         if user_speech:
             response = await analyze_text(user_speech)
             await database.update_response_frequency(response)
-            database.log_interaction(user_speech, response)
+            logger.log_interaction(user_speech, response)  # Using custom logger
             return {"response": response}
         else:
             raise HTTPException(status_code=400, detail="No speech detected")
     except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
+        logger.log_error(f"An error occurred: {str(e)}")  # Using custom logger
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
