@@ -1,22 +1,37 @@
-
+import speech_recognition as sr
+import pyttsx3
 import logging
-from vosk import Model, KaldiRecognizer
-import json
-import os
 
-model_path = os.getenv('VOSK_MODEL_PATH', 'models/vosk-model-small-en-us-0.15')
-model = Model(model_path)
-recognizer = KaldiRecognizer(model, 16000)
+# Initialize the logger
+logging.basicConfig(level=logging.INFO)
 
-async def recognize_audio(audio_data):
-    try:
-        if recognizer.AcceptWaveform(audio_data):
-            result = json.loads(recognizer.Result())
-            text = result['text']
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
+
+# Initialize the speech recognition
+recognizer = sr.Recognizer()
+microphone = sr.Microphone()
+
+def listen_and_respond():
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source)
+        logging.info("Listening for speech...")
+        try:
+            audio = recognizer.listen(source)
+            text = recognizer.recognize_google(audio)
             logging.info(f"Recognized speech: {text}")
+            engine.say(f"You said: {text}")
+            engine.runAndWait()
             return text
-        else:
-            return "I didn't catch that. Could you please repeat?"
-    except Exception as e:
-        logging.error(f"Error in speech recognition: {str(e)}")
-        raise Exception("Speech recognition failed due to an internal error.")
+        except sr.UnknownValueError:
+            logging.error("Speech recognition could not understand audio")
+            engine.say("I didn't catch that. Could you please repeat?")
+            engine.runAndWait()
+        except sr.RequestError as e:
+            logging.error(f"Speech recognition service error: {e}")
+            engine.say("I'm having trouble with the speech service right now.")
+            engine.runAndWait()
+
+if __name__ == "__main__":
+    while True:
+        listen_and_respond()
