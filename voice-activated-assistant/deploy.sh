@@ -1,21 +1,23 @@
-
 #!/bin/bash
+
 echo "Starting deployment of the voice-activated personal assistant."
 
-# Environment setup
+# Set environment variables
 echo "Setting up environment variables..."
-export DATABASE_PATH=chat_memory.db
-export VOSK_MODEL_PATH=models/vosk-model-small-en-us-0.15
-export SENTIMENT_MODEL_PATH=models/bert-sentiment-model
-export DIALOGUE_MODEL_PATH=models/gpt2-dialogue-model
+export DATABASE_PATH="chat_memory.db"
+export MODEL_PATH="models/"
 
-# Install dependencies
+# Install required Python packages locally
 echo "Installing required Python packages..."
-pip install fastapi uvicorn sqlalchemy aiosqlite vosk transformers
+pip install fastapi uvicorn sqlalchemy aiosqlite spacy pyttsx3 speech_recognition
+
+# Download and setup Spacy models
+echo "Downloading and setting up Spacy models..."
+python -m spacy download en_core_web_trf
 
 # Initialize the database
 echo "Initializing database..."
-python -c 'import database_interaction; asyncio.run(database_interaction.init_db())'
+python -c 'import asyncio; from database_interaction import init_db; asyncio.run(init_db())'
 
 # Run the application
 echo "Starting the application..."
