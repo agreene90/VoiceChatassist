@@ -36,10 +36,6 @@ The assistant's architecture includes several modules:
 ## Deployment
 Follow the instructions in `deploy.sh` to deploy the application on any server with minimal setup.
 
-## Contributing
-Contributions to improve the assistant are welcome. Please fork the repository, make your changes, and submit a pull request to the main branch.
-
-For more information, contact [contact-information].
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
