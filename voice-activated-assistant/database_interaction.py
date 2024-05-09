@@ -1,34 +1,44 @@
-
+import asyncio
 import aiosqlite
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+import logging
 
-database_url = 'sqlite+aiosqlite:///chat_memory.db'
-
-# Using SQLAlchemy for connection pooling
-engine = create_async_engine(database_url, echo=True, pool_pre_ping=True)
-AsyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+# Initialize the logger
+logging.basicConfig(level=logging.INFO)
 
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Connect to the SQLite database
+    database_path = 'chat_memory.db'
+    async with aiosqlite.connect(database_path) as db:
+        # Create tables if they don't exist
+        await db.executescript('''
+            CREATE TABLE IF NOT EXISTS Responses (
+                pattern TEXT NOT NULL,
+                response TEXT NOT NULL,
+                frequency INTEGER DEFAULT 1,
+                last_used DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (pattern, response)
+            );
+            CREATE TABLE IF NOT EXISTS Contexts (
+                session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                context_key TEXT NOT NULL,
+                context_value TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
+        await db.commit()
+        logging.info("Database initialized and tables created.")
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
+async def update_response_frequency(response):
+    database_path = 'chat_memory.db'
+    async with aiosqlite.connect(database_path) as db:
+        # Update the frequency of the response usage
+        await db.execute('''
+            UPDATE Responses
+            SET frequency = frequency + 1, last_used = CURRENT_TIMESTAMP
+            WHERE response = ?
+        ''', (response,))
+        await db.commit()
+        logging.info(f"Updated frequency for response: {response}")
 
-async def store_interaction(text, response, user_id=None, session_id=None):
-    async with AsyncSessionLocal() as session:
-        new_interaction = Interactions(text=text, response=response, user_id=user_id, session_id=session_id)
-        session.add(new_interaction)
-        await session.commit()
-
-class Interactions(Base):
-    __tablename__ = 'interactions'
-    id = Column(Integer, primary_key=True, index=True)
-    text = Column(String, index=True)
-    response = Column(String)
-    timestamp = Column(DateTime, default=func.now())
-    user_id = Column(String, index=True)
-    session_id = Column(String, index=True)
+if __name__ == "__main__":
+    asyncio.run(init_db())
