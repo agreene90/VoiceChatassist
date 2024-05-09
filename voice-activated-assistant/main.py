@@ -5,10 +5,10 @@ import asyncio
 import logging
 
 # Custom modules
-from utilities import CustomLogger
-from database_interaction import ChatDatabase
-from ML import MLModel  # Importing the MLModel from ML.py
-from nlp_processing import listen_and_respond  # Import listen_and_respond from your nlp_processing script
+from .utilities import CustomLogger
+from .database_interaction import ChatDatabase
+from .ML import MLModel  # Importing the MLModel from ML.py
+from .nlp_processing import listen_and_respond  # Import listen_and_respond from your nlp_processing script
 
 # Setup custom logging
 logger = CustomLogger('app.log', max_bytes=1000000, backup_count=5)
