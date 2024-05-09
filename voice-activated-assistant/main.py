@@ -26,15 +26,14 @@ def get_database():
 
 @app.post("/process/")
 async def process_audio(interaction: Interaction, database: ChatDatabase = Depends(get_database)):
+    """
+    Receives a speech input as text, processes it through NLP, and returns a generated response.
+    """
     try:
         user_speech = interaction.speech
-        # Listen to the user and convert speech to text
         if user_speech:
-            # Analyze the text for patterns and generate a response
             response = await analyze_text(user_speech)
-            # Update the frequency of the response
             await database.update_response_frequency(response)
-            # Log the interaction
             database.log_interaction(user_speech, response)
             return {"response": response}
         else:
@@ -45,6 +44,9 @@ async def process_audio(interaction: Interaction, database: ChatDatabase = Depen
 
 @app.get("/response/{response}")
 async def get_response_frequency(response: str, database: ChatDatabase = Depends(get_database)):
+    """
+    Fetches the frequency of how often a particular response has been used.
+    """
     try:
         frequency = await database.get_response_frequency(response)
         if frequency is not None:
@@ -57,15 +59,18 @@ async def get_response_frequency(response: str, database: ChatDatabase = Depends
 
 @app.post("/listen/")
 async def listen_and_process(database: ChatDatabase = Depends(get_database)):
+    """
+    Listens to live speech using the system's microphone, converts it to text, analyzes the text, and returns a response.
+    """
     try:
         user_speech = listen_and_respond()
-        # Analyze the text for patterns and generate a response
-        response = await analyze_text(user_speech)
-        # Update the frequency of the response
-        await database.update_response_frequency(response)
-        # Log the interaction
-        database.log_interaction(user_speech, response)
-        return {"response": response}
+        if user_speech:
+            response = await analyze_text(user_speech)
+            await database.update_response_frequency(response)
+            database.log_interaction(user_speech, response)
+            return {"response": response}
+        else:
+            raise HTTPException(status_code=400, detail="No speech detected")
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
