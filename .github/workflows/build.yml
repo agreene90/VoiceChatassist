@@ -1,0 +1,41 @@
+name: Build Voice-Activated Chat System Executable
+
+on:
+  push:
+    branches:
+      - main  # Triggers the workflow on pushes to the main branch
+    paths:
+      - 'voice-activated-assistant/**'  # Triggers only for changes within this directory
+
+jobs:
+  build:
+    runs-on: windows-latest  # Uses a Windows runner to ensure compatibility
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2  # Checks out your repository
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'  # Ensures Python 3.9 is used; adjust according to your project's requirements
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip  # Upgrades pip
+        pip install fastapi uvicorn[standard] pydantic pyinstaller sqlalchemy asyncpg aiosqlite  # Install your required packages, including database drivers if necessary
+
+    - name: Install additional dependencies
+      run: pip install spacy pyttsx3 SpeechRecognition  # Ensures NLP and speech recognition libraries are installed
+
+    - name: Download NLP models
+      run: python -m spacy download en_core_web_sm  # Downloads necessary spaCy NLP models
+
+    - name: Create Executable
+      run: pyinstaller --onefile --clean voice-activated-assistant/main.py  # Path to your main FastAPI app
+
+    - name: Upload Executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: voice-activated-chat-system-executable
+        path: dist/*.exe  # Uploads the built executable
