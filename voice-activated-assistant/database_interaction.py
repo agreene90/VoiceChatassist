@@ -29,6 +29,7 @@ class ChatDatabase:
                 logging.info("Database initialized and tables created.")
         except Exception as e:
             logging.error(f"Error initializing database: {e}")
+            raise
 
     async def update_response_frequency(self, response):
         try:
@@ -42,6 +43,7 @@ class ChatDatabase:
                 logging.info(f"Updated frequency for response: {response}")
         except Exception as e:
             logging.error(f"Error updating response frequency: {e}")
+            raise
 
     async def close(self):
         try:
@@ -50,6 +52,7 @@ class ChatDatabase:
                 logging.info("Database connection closed successfully.")
         except Exception as e:
             logging.error(f"Error closing database connection: {e}")
+            raise
 
 if __name__ == "__main__":
     database = ChatDatabase('chat_memory.db')
