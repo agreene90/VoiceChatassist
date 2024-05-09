@@ -21,19 +21,23 @@ pip install --upgrade pip
 
 # Install required Python packages locally
 echo "Installing required Python packages..."
-pip install fastapi uvicorn sqlalchemy aiosqlite spacy pyttsx3 speech_recognition
+pip install fastapi uvicorn sqlalchemy aiosqlite spacy pyttsx3 speech_recognition streamlit streamlit_webrtc
 
 # Download and setup SpaCy models
 echo "Downloading and setting up SpaCy models..."
 python -m spacy download en_core_web_trf
 
-# Initialize the database
+# Install NLTK data
+echo "Installing NLTK data..."
+python -m nltk.downloader punkt
+
+# Ensure the database is initialized properly with error handling
 echo "Initializing the database..."
-python -c 'import asyncio; from database_interaction import ChatDatabase; db = ChatDatabase("$DATABASE_PATH"); asyncio.run(db.init_db())'
+python -c 'import asyncio; from database_interaction import ChatDatabase; db = ChatDatabase("$DATABASE_PATH"); asyncio.run(db.init_db())' || echo "Failed to initialize the database. Check the logs for details."
 
 # Start the application
 echo "Starting the application..."
-uvicorn main:app --host 0.0.0.0 --port 5000
+uvicorn main:app --host 0.0.0.0 --port 5000 || echo "Failed to start the application. Check the logs for details."
 
 echo "Deployment complete."
 
