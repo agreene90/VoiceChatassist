@@ -14,7 +14,7 @@ This project implements a sophisticated voice-activated personal assistant utili
 ## Installation
 Clone the repository to your local machine and navigate to the project directory:
 ```bash
-git clone [repository-url]
+git clone https://github.com/agreene90/VoiceChatassist
 cd voice-activated-assistant
 ```
 Run `deploy.sh` to set up the environment and start the application:
