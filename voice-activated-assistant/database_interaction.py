@@ -5,6 +5,7 @@ import logging
 class ChatDatabase:
     def __init__(self, database_path):
         self.database_path = database_path
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     async def init_db(self):
         try:
@@ -42,7 +43,14 @@ class ChatDatabase:
         except Exception as e:
             logging.error(f"Error updating response frequency: {e}")
 
+    async def close(self):
+        try:
+            async with aiosqlite.connect(self.database_path) as db:
+                await db.close()
+                logging.info("Database connection closed successfully.")
+        except Exception as e:
+            logging.error(f"Error closing database connection: {e}")
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     database = ChatDatabase('chat_memory.db')
     asyncio.run(database.init_db())
