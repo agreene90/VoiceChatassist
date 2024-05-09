@@ -2,11 +2,13 @@ import streamlit as st
 from streamlit_webrtc import webrtc_streamer, RTCConfiguration, VideoTransformerBase
 import pyttsx3
 import asyncio
+import logging
 
-# Custom modules and ML model
+# Custom modules
 from utilities import CustomLogger
 from database_interaction import ChatDatabase
 from ML import MLModel  # Importing the MLModel from ML.py
+from nlp_processing import listen_and_respond  # Import listen_and_respond from your nlp_processing script
 
 # Setup custom logging
 logger = CustomLogger('app.log', max_bytes=1000000, backup_count=5)
@@ -29,7 +31,7 @@ RTC_CONFIGURATION = RTCConfiguration(
 class AudioProcessor(VideoTransformerBase):
     def recv(self, frame):
         data = frame.to_ndarray(format="mono")
-        text = listen_and_respond(data)  # Your existing function to process audio
+        text = listen_and_respond(data)  # Use the listen_and_respond function to process audio
         response = asyncio.run(ml_model.summarize_text(text))
         sentiment_score = asyncio.run(ml_model.analyze_sentiment(text))
         asyncio.run(db.update_response_frequency(response))
