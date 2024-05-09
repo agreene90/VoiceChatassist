@@ -1,11 +1,10 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, Path, Depends
-import asyncio
+from fastapi import FastAPI, HTTPException, Depends
 import logging
-from speech_recognition import listen_and_respond
-from nlp_processing import analyze_text
-from database_interaction import ChatDatabase
 from pydantic import BaseModel
+from database_interaction import ChatDatabase
+from nlp_processing import analyze_text
+from speech_recognition import listen_and_respond
 
 # Initialize the FastAPI app
 app = FastAPI()
@@ -45,14 +44,28 @@ async def process_audio(interaction: Interaction, database: ChatDatabase = Depen
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/response/{response}")
-async def get_response_frequency(response: str = Path(..., title="Response", description="The response to get frequency for"),
-                                 database: ChatDatabase = Depends(get_database)):
+async def get_response_frequency(response: str, database: ChatDatabase = Depends(get_database)):
     try:
         frequency = await database.get_response_frequency(response)
         if frequency is not None:
             return {"response": response, "frequency": frequency}
         else:
             raise HTTPException(status_code=404, detail="Response not found")
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/listen/")
+async def listen_and_process(database: ChatDatabase = Depends(get_database)):
+    try:
+        user_speech = listen_and_respond()
+        # Analyze the text for patterns and generate a response
+        response = await analyze_text(user_speech)
+        # Update the frequency of the response
+        await database.update_response_frequency(response)
+        # Log the interaction
+        database.log_interaction(user_speech, response)
+        return {"response": response}
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
